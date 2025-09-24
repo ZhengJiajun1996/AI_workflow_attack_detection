@@ -55,7 +55,7 @@ def main(message_data, messages_infos):
         context['statistics']['total_messages'] += 1
         context['statistics']['message_lengths'].append(message_features['length'])
         context['statistics']['processing_history'].append({
-            'index': message_info.get('index', 0),
+            'iteration_index': message_info.get('iteration_index', 0),
             'features': message_features,
             'timestamp': message_features['timestamp']
         })

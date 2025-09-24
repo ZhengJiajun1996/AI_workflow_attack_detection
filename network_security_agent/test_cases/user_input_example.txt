@@ -1,0 +1,19 @@
+GET /login.php HTTP/1.1
+Host: example.com
+User-Agent: Mozilla/5.0
+
+POST /api/users HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+GET /search?q=1%27%20OR%20%271%27%3D%271 HTTP/1.1
+Host: example.com
+
+GET /static/js/app.js HTTP/1.1
+Host: cdn.example.com
+
+GET /admin/../../etc/passwd HTTP/1.1
+Host: example.com
+
+GET /profile?name=<script>alert(1)</script> HTTP/1.1
+Host: example.com

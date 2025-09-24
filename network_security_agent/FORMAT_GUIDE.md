@@ -1,4 +1,4 @@
-# Python代码执行模块格式指南
+# Python代码执行模块格式指南（迭代索引 iteration_index & 多行字符串 user_input）
 
 ## 🎯 正确的函数返回格式
 
@@ -26,7 +26,7 @@ def main(input_param1, input_param2):
 
 ### 1. 单个报文提取模块 (BA)
 - **文件**: `modules/message_extractor.py`
-- **函数**: `main(user_input, current_index)`
+- **函数**: `main(user_input, iteration_index)`
 - **返回**: 
 ```python
 {
@@ -123,7 +123,7 @@ def main(input_param1, input_param2):
 
 ### 调用示例
 ```python
-# 单个报文提取
+# 单个报文提取（注意：user_input为多行字符串；第二参为iteration_index）
 result = main("GET /login HTTP/1.1\nPOST /api HTTP/1.1", "0")
 # 返回: {"message_data": "{\"message\": \"GET /login HTTP/1.1\", \"index\": 0, ...}"}
 

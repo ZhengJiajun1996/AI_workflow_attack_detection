@@ -5,13 +5,13 @@
 输出：单个报文信息 (JSON格式)
 """
 
-def main(user_input, current_index):
+def main(user_input, iteration_index):
     import json
     import re
     
     try:
-        # 解析当前索引
-        index = int(current_index) if current_index.isdigit() else 0
+        # 解析当前迭代次数
+        index = int(iteration_index) if str(iteration_index).isdigit() else 0
         
         # 将输入文本按行分割，每行作为一个报文
         messages = [line.strip() for line in user_input.split('\n') if line.strip()]
@@ -20,14 +20,14 @@ def main(user_input, current_index):
             message = messages[index]
             message_data = {
                 'message': message,
-                'index': index,
+                'iteration_index': index,
                 'total_count': len(messages),
                 'completed': False
             }
         else:
             message_data = {
                 'message': '',
-                'index': index,
+                'iteration_index': index,
                 'total_count': len(messages),
                 'completed': True
             }

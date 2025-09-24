@@ -19,7 +19,7 @@ def main(decision_result, llm_result=None, original_decision=None):
                 llm_data = json.loads(llm_result)
                 # 使用LLM分析结果
                 detect_result = {
-                    'message_index': 0,  # 将由循环变量更新模块设置
+                    'iteration_index': 0,  # 将由循环变量更新模块设置
                     'timestamp': datetime.now().isoformat(),
                     'attack_flag': llm_data.get('attack_flag', decision_data.get('attack_flag', False)),
                     'attack_type': llm_data.get('attack_type', decision_data.get('attack_type', 'none')),
@@ -100,7 +100,7 @@ def _generate_fallback_response(decision_data, error_type):
     from datetime import datetime
     
     detect_result = {
-        'message_index': 0,
+        'iteration_index': 0,
         'timestamp': datetime.now().isoformat(),
         'attack_flag': decision_data.get('attack_flag', False),
         'attack_type': decision_data.get('attack_type', 'none'),

@@ -5,7 +5,7 @@
 输出：更新后的结果列表
 """
 
-def main(all_detect_results, detect_result, message_index):
+def main(all_detect_results, detect_result, iteration_index):
     import json
     from datetime import datetime
     
@@ -19,8 +19,8 @@ def main(all_detect_results, detect_result, message_index):
         # 解析新的检测结果
         result_data = json.loads(detect_result)
         
-        # 设置消息索引
-        result_data['message_index'] = int(message_index) if message_index.isdigit() else 0
+        # 设置当前迭代索引
+        result_data['iteration_index'] = int(iteration_index) if str(iteration_index).isdigit() else 0
         
         # 确保时间戳存在
         if 'timestamp' not in result_data:
@@ -29,12 +29,12 @@ def main(all_detect_results, detect_result, message_index):
         # 添加处理元数据
         result_data['processing_metadata'] = {
             'processed_at': datetime.now().isoformat(),
-            'result_id': f"RES_{int(datetime.now().timestamp())}_{result_data['message_index']}",
+            'result_id': f"RES_{int(datetime.now().timestamp())}_{result_data['iteration_index']}",
             'sequence_number': len(results_list) + 1
         }
         
         # 验证结果完整性
-        required_fields = ['message_index', 'timestamp', 'attack_flag', 'attack_type', 'risk_score']
+        required_fields = ['iteration_index', 'timestamp', 'attack_flag', 'attack_type', 'risk_score']
         for field in required_fields:
             if field not in result_data:
                 result_data[field] = None if field != 'attack_flag' else False
