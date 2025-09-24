@@ -49,14 +49,15 @@ def main(decision_result, llm_result=None, original_decision=None):
             detect_result = _generate_rule_engine_response(decision_data)
         
         return {
-            'output': json.dumps(detect_result)
+            "detect_result": json.dumps(detect_result)
         }
     except Exception as e:
+        error_data = {
+            'error': True,
+            'message': str(e)
+        }
         return {
-            'output': json.dumps({
-                'error': True,
-                'message': str(e)
-            })
+            "detect_result": json.dumps(error_data)
         }
 
 def _generate_rule_engine_response(decision_data):

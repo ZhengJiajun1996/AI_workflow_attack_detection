@@ -5,15 +5,15 @@ LLM攻击分析模块 (BG)
 输出：LLM分析提示词和相关元数据
 """
 
-def main(message, messages_infos, decision_result):
+def main(message_data, messages_infos, decision_result):
     import json
     
     try:
         # 解析输入
-        message_data = json.loads(message)
+        message_info = json.loads(message_data)
         decision_data = json.loads(decision_result)
         
-        current_message = message_data.get('message', '')
+        current_message = message_info.get('message', '')
         detected_attacks = decision_data.get('detected_attacks', [])
         attack_details = decision_data.get('attack_details', {})
         risk_factors = decision_data.get('risk_factors', [])
@@ -111,29 +111,34 @@ def main(message, messages_infos, decision_result):
 
 请确保分析结果准确、专业，并提供可操作的建议。"""
 
+        llm_data = {
+            'prompt': prompt,
+            'message_data': message_info,
+            'decision_data': decision_data,
+            'context_summary': {
+                'recent_attack_rate': context_analysis.get('recent_attack_rate', 0),
+                'total_messages': statistics.get('total_messages', 0),
+                'attack_patterns': statistics.get('attack_patterns', {}),
+                'suspicious_patterns': context_analysis.get('time_based_analysis', {}).get('suspicious_patterns', [])
+            },
+            'analysis_metadata': {
+                'message_length': len(current_message),
+                'detected_attacks_count': len(detected_attacks),
+                'risk_factors_count': len(risk_factors),
+                'confidence_threshold': 0.7
+            }
+        }
+        
         return {
-            'output': json.dumps({
-                'prompt': prompt,
-                'message_data': message_data,
-                'decision_data': decision_data,
-                'context_summary': {
-                    'recent_attack_rate': context_analysis.get('recent_attack_rate', 0),
-                    'total_messages': statistics.get('total_messages', 0),
-                    'attack_patterns': statistics.get('attack_patterns', {}),
-                    'suspicious_patterns': context_analysis.get('time_based_analysis', {}).get('suspicious_patterns', [])
-                },
-                'analysis_metadata': {
-                    'message_length': len(current_message),
-                    'detected_attacks_count': len(detected_attacks),
-                    'risk_factors_count': len(risk_factors),
-                    'confidence_threshold': 0.7
-                }
-            })
+            "prompt": prompt,
+            "llm_data": json.dumps(llm_data)
         }
     except Exception as e:
+        error_data = {
+            'error': True,
+            'message': str(e)
+        }
         return {
-            'output': json.dumps({
-                'error': True,
-                'message': str(e)
-            })
+            "prompt": "Error in LLM analyzer",
+            "llm_data": json.dumps(error_data)
         }

@@ -5,18 +5,20 @@
 输出：更新后的辅助决策信息
 """
 
-def main(message, messages_infos):
+def main(message_data, messages_infos):
     import json
     import re
     from datetime import datetime
     
     try:
         # 解析输入
-        message_data = json.loads(message)
-        current_message = message_data.get('message', '')
+        message_info = json.loads(message_data)
+        current_message = message_info.get('message', '')
         
         if not current_message:
-            return {'output': json.dumps(messages_infos)}
+            return {
+                "messages_infos": json.dumps(messages_infos)
+            }
         
         # 解析现有辅助决策信息
         try:
@@ -34,7 +36,7 @@ def main(message, messages_infos):
             'has_xss_patterns': bool(re.search(r'<[^>]*>|javascript:|on\w+\s*=|vbscript:', current_message.lower())),
             'has_injection_patterns': bool(re.search(r'[\'\"][\s]*or[\s]*[\'\"]|[\'\"][\s]*and[\s]*[\'\"]|--|\/\*|\*\/', current_message.lower())),
             'has_encoding_attempts': bool(re.search(r'%[0-9a-fA-F]{2}|\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}', current_message)),
-            'special_chars_count': len(re.findall(r'[<>\"'\\\\&]', current_message)),
+            'special_chars_count': len(re.findall(r'[<>"&\\\\]', current_message)),
             'timestamp': datetime.now().isoformat()
         }
         
@@ -53,7 +55,7 @@ def main(message, messages_infos):
         context['statistics']['total_messages'] += 1
         context['statistics']['message_lengths'].append(message_features['length'])
         context['statistics']['processing_history'].append({
-            'index': message_data.get('index', 0),
+            'index': message_info.get('index', 0),
             'features': message_features,
             'timestamp': message_features['timestamp']
         })
@@ -93,12 +95,14 @@ def main(message, messages_infos):
             context['statistics']['message_lengths'] = context['statistics']['message_lengths'][-200:]
         
         return {
-            'output': json.dumps(context)
+            "messages_infos": json.dumps(context),
+            "message_features": json.dumps(message_features)
         }
     except Exception as e:
+        error_data = {
+            'error': True,
+            'message': str(e)
+        }
         return {
-            'output': json.dumps({
-                'error': True,
-                'message': str(e)
-            })
+            "messages_infos": json.dumps(error_data)
         }

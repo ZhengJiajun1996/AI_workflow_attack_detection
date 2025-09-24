@@ -18,27 +18,28 @@ def main(user_input, current_index):
         
         if index < len(messages):
             message = messages[index]
-            return {
-                'output': json.dumps({
-                    'message': message,
-                    'index': index,
-                    'total_count': len(messages),
-                    'completed': False
-                })
+            message_data = {
+                'message': message,
+                'index': index,
+                'total_count': len(messages),
+                'completed': False
             }
         else:
-            return {
-                'output': json.dumps({
-                    'message': '',
-                    'index': index,
-                    'total_count': len(messages),
-                    'completed': True
-                })
+            message_data = {
+                'message': '',
+                'index': index,
+                'total_count': len(messages),
+                'completed': True
             }
-    except Exception as e:
+        
         return {
-            'output': json.dumps({
-                'error': True,
-                'message': str(e)
-            })
+            "message_data": json.dumps(message_data)
+        }
+    except Exception as e:
+        error_data = {
+            'error': True,
+            'message': str(e)
+        }
+        return {
+            "message_data": json.dumps(error_data)
         }

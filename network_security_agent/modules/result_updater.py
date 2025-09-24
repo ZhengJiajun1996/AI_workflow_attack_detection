@@ -47,14 +47,16 @@ def main(all_detect_results, detect_result, message_index):
         result_data['session_statistics'] = stats
         
         return {
-            'output': json.dumps(results_list)
+            "all_detect_results": json.dumps(results_list),
+            "current_result": json.dumps(result_data)
         }
     except Exception as e:
+        error_data = {
+            'error': True,
+            'message': str(e)
+        }
         return {
-            'output': json.dumps({
-                'error': True,
-                'message': str(e)
-            })
+            "all_detect_results": json.dumps(error_data)
         }
 
 def _generate_statistics(results_list):
