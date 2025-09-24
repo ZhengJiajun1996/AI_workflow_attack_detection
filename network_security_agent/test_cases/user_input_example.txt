@@ -1,0 +1,39 @@
+GET /login HTTP/1.1
+Host: www.example.com
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate, br
+Connection: keep-alive
+Cookie: sessionid=abc123; theme=light
+
+POST /api/users HTTP/1.1
+Host: api.example.com
+User-Agent: curl/8.5.0
+Accept: */*
+Content-Type: application/json
+Content-Length: 62
+
+{"username":"admin","password":"admin' OR '1'='1"}
+
+GET /search?q=%27%20OR%201%3D1%20--%20 HTTP/1.1
+Host: www.example.com
+User-Agent: Mozilla/5.0
+Referer: https://www.example.com/
+Accept: */*
+
+GET /static/js/app.js HTTP/1.1
+Host: cdn.example.com
+User-Agent: Mozilla/5.0
+If-None-Match: W/"abc123"
+Accept: */*
+
+GET /admin/../../etc/passwd HTTP/1.1
+Host: intranet.example.com
+User-Agent: Mozilla/5.0
+Accept: */*
+
+GET /profile?name=%3Cscript%3Ealert(1)%3C%2Fscript%3E HTTP/1.1
+Host: www.example.com
+User-Agent: Mozilla/5.0
+Accept: text/html
