@@ -61,21 +61,30 @@ def main(message_data, messages_infos):
             'timestamp': message_features['timestamp']
         })
         
-        # 更新攻击模式统计
-        attack_patterns = {
-            'sql_injection': message_features['has_sql_keywords'] or message_features['has_injection_patterns'],
-            'xss': message_features['has_script_tags'] or message_features['has_xss_patterns'],
-            'command_injection': message_features['has_command_injection'],
-            'path_traversal': message_features['has_path_traversal'],
-            'encoding_attempts': message_features['has_encoding_attempts']
-        }
+        # 更新攻击模式统计（避免 dict 迭代）
+        if message_features.get('has_sql_keywords', False) or message_features.get('has_injection_patterns', False):
+            context['statistics']['attack_patterns']['sql_injection'] = context['statistics']['attack_patterns'].get('sql_injection', 0) + 1
+        if message_features.get('has_script_tags', False) or message_features.get('has_xss_patterns', False):
+            context['statistics']['attack_patterns']['xss'] = context['statistics']['attack_patterns'].get('xss', 0) + 1
+        if message_features.get('has_command_injection', False):
+            context['statistics']['attack_patterns']['command_injection'] = context['statistics']['attack_patterns'].get('command_injection', 0) + 1
+        if message_features.get('has_path_traversal', False):
+            context['statistics']['attack_patterns']['path_traversal'] = context['statistics']['attack_patterns'].get('path_traversal', 0) + 1
+        if message_features.get('has_encoding_attempts', False):
+            context['statistics']['attack_patterns']['encoding_attempts'] = context['statistics']['attack_patterns'].get('encoding_attempts', 0) + 1
         
-        for pattern, detected in attack_patterns.items():
-            if detected:
-                context['statistics']['attack_patterns'][pattern] = context['statistics']['attack_patterns'].get(pattern, 0) + 1
-        
-        # 计算上下文关联信息（避免生成器/集合推导式以兼容平台限制）
-        recent_messages = context['statistics']['processing_history'][-10:]
+        # 计算上下文关联信息（避免切片、生成器、字典迭代）
+        ph = context['statistics']['processing_history']
+        ph_len = len(ph)
+        recent_messages = []
+        if ph_len > 0:
+            start_idx = ph_len - 10
+            if start_idx < 0:
+                start_idx = 0
+            idx = start_idx
+            while idx < ph_len:
+                recent_messages.append(ph[idx])
+                idx += 1
         if len(recent_messages) > 1:
             # 统计最近攻击数
             recent_attacks = 0
@@ -114,11 +123,18 @@ def main(message_data, messages_infos):
                         break
                     t += 1
 
-            # 可疑模式（从统计的攻击模式中提取计数>0的键）
+            # 可疑模式（显式检查已知键，避免 dict 迭代）
             suspicious_patterns = []
-            for p_key in context['statistics']['attack_patterns']:
-                if context['statistics']['attack_patterns'].get(p_key, 0) > 0:
-                    suspicious_patterns.append(p_key)
+            if context['statistics']['attack_patterns'].get('sql_injection', 0) > 0:
+                suspicious_patterns.append('sql_injection')
+            if context['statistics']['attack_patterns'].get('xss', 0) > 0:
+                suspicious_patterns.append('xss')
+            if context['statistics']['attack_patterns'].get('command_injection', 0) > 0:
+                suspicious_patterns.append('command_injection')
+            if context['statistics']['attack_patterns'].get('path_traversal', 0) > 0:
+                suspicious_patterns.append('path_traversal')
+            if context['statistics']['attack_patterns'].get('encoding_attempts', 0) > 0:
+                suspicious_patterns.append('encoding_attempts')
 
             context['context_analysis'] = {
                 'recent_attack_rate': (float(recent_attacks) / float(len(recent_messages))) if len(recent_messages) > 0 else 0.0,
