@@ -95,8 +95,7 @@ def main(message_data, messages_infos):
             context['statistics']['message_lengths'] = context['statistics']['message_lengths'][-200:]
         
         return {
-            "messages_infos": json.dumps(context),
-            "message_features": json.dumps(message_features)
+            "messages_infos": json.dumps(context)
         }
     except Exception as e:
         error_data = {

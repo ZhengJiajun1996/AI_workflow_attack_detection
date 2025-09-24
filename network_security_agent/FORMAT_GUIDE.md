@@ -40,8 +40,7 @@ def main(input_param1, input_param2):
 - **返回**:
 ```python
 {
-    "messages_infos": json.dumps(updated_context),
-    "message_features": json.dumps(features)
+    "messages_infos": json.dumps(updated_context)
 }
 ```
 
@@ -130,7 +129,7 @@ result = main("GET /login HTTP/1.1\nPOST /api HTTP/1.1", "0")
 
 # 辅助决策信息提取
 result = main(message_data, "{}")
-# 返回: {"messages_infos": "{...}", "message_features": "{...}"}
+# 返回: {"messages_infos": "{...}"}
 
 # 决策引擎
 result = main(message_data, messages_infos)
