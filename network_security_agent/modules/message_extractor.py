@@ -13,8 +13,11 @@ def main(user_input, iteration_index):
         # 解析当前迭代次数
         index = int(iteration_index) if str(iteration_index).isdigit() else 0
         
-        # 将输入文本按行分割，每行作为一个报文
-        messages = [line.strip() for line in user_input.split('\n') if line.strip()]
+        # 将输入文本按HTTP请求边界分割：空行(两个或以上换行)作为分隔符
+        # 支持CRLF/ LF 以及多余空白行
+        parts = re.split(r"\r?\n\r?\n+", user_input.strip()) if user_input else []
+        # 清理首尾空白，过滤空片段
+        messages = [p.strip() for p in parts if p and p.strip()]
         
         if index < len(messages):
             message = messages[index]
