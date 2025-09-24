@@ -74,18 +74,59 @@ def main(message_data, messages_infos):
             if detected:
                 context['statistics']['attack_patterns'][pattern] = context['statistics']['attack_patterns'].get(pattern, 0) + 1
         
-        # 计算上下文关联信息
-        recent_messages = context['statistics']['processing_history'][-10:]  # 最近10条
+        # 计算上下文关联信息（避免生成器/集合推导式以兼容平台限制）
+        recent_messages = context['statistics']['processing_history'][-10:]
         if len(recent_messages) > 1:
-            recent_attacks = sum(1 for msg in recent_messages if any(msg['features'].get(f'has_{pattern}', False) for pattern in ['sql_keywords', 'script_tags', 'command_injection', 'path_traversal']))
-            
+            # 统计最近攻击数
+            recent_attacks = 0
+            i = 0
+            check_keys = ['sql_keywords', 'script_tags', 'command_injection', 'path_traversal']
+            while i < len(recent_messages):
+                msg = recent_messages[i]
+                has_attack = False
+                j = 0
+                while j < len(check_keys):
+                    key = 'has_' + check_keys[j]
+                    if msg.get('features', {}).get(key, False):
+                        has_attack = True
+                        break
+                    j += 1
+                if has_attack:
+                    recent_attacks += 1
+                i += 1
+
+            # 平均消息长度
+            total_len = 0
+            k = 0
+            while k < len(recent_messages):
+                total_len += recent_messages[k].get('features', {}).get('length', 0)
+                k += 1
+            average_length = (float(total_len) / float(len(recent_messages))) if len(recent_messages) > 0 else 0.0
+
+            # has_sql_keywords 一致性
+            all_same = True
+            if len(recent_messages) > 0:
+                first_val = bool(recent_messages[0].get('features', {}).get('has_sql_keywords', False))
+                t = 1
+                while t < len(recent_messages):
+                    if bool(recent_messages[t].get('features', {}).get('has_sql_keywords', False)) != first_val:
+                        all_same = False
+                        break
+                    t += 1
+
+            # 可疑模式（从统计的攻击模式中提取计数>0的键）
+            suspicious_patterns = []
+            for p_key in context['statistics']['attack_patterns']:
+                if context['statistics']['attack_patterns'].get(p_key, 0) > 0:
+                    suspicious_patterns.append(p_key)
+
             context['context_analysis'] = {
-                'recent_attack_rate': recent_attacks / len(recent_messages),
-                'average_message_length': sum(msg['features']['length'] for msg in recent_messages) / len(recent_messages),
-                'pattern_consistency': len(set(msg['features'].get('has_sql_keywords', False) for msg in recent_messages)) == 1,
+                'recent_attack_rate': (float(recent_attacks) / float(len(recent_messages))) if len(recent_messages) > 0 else 0.0,
+                'average_message_length': average_length,
+                'pattern_consistency': all_same,
                 'time_based_analysis': {
                     'messages_per_minute': 0,
-                    'suspicious_patterns': [p for p, count in context['statistics']['attack_patterns'].items() if count > 0]
+                    'suspicious_patterns': suspicious_patterns
                 }
             }
         
