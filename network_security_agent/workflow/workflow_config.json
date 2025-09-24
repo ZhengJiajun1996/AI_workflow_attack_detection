@@ -1,308 +1,150 @@
 {
-  "workflow_name": "网络攻击检测智能体",
+  "workflow_name": "网络攻击检测工作流",
   "workflow_version": "1.0.0",
-  "description": "基于报文分析、上下文特征提取、规则引擎和LLM深度分析的网络攻击检测系统",
+  "description": "基于用户需求的攻击检测工作流：报文提取->辅助决策信息提取->决策引擎->LLM分析->响应生成",
+  
   "workflow_structure": {
-    "nodes": [
-      {
-        "id": "packet_input",
-        "name": "报文输入模块",
-        "type": "python_module",
-        "description": "处理旁路镜像转发的HTTP请求报文",
-        "module_config": {
-          "function_name": "execute_packet_input",
-          "file_path": "modules/packet_input.py",
-          "input_schema": {
-            "type": "string",
-            "description": "原始报文数据(JSON格式)"
-          },
-          "output_schema": {
-            "type": "object",
-            "properties": {
-              "packet_id": {"type": "string"},
-              "timestamp": {"type": "string"},
-              "source_ip": {"type": "string"},
-              "method": {"type": "string"},
-              "url": {"type": "string"},
-              "headers": {"type": "object"},
-              "body": {"type": "string"},
-              "validation": {"type": "object"},
-              "suspicious_patterns": {"type": "object"}
-            }
-          }
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "user_input": {
+          "type": "string",
+          "description": "工作流入参变量：一连串请求报文文本"
+        }
+      }
+    },
+    
+    "main_workflow": {
+      "nodes": [
+        {
+          "id": "start_node",
+          "name": "开始节点A",
+          "type": "input_node",
+          "description": "用户传入一连串请求报文文本",
+          "input_variable": "user_input",
+          "position": {"x": 100, "y": 100}
         },
-        "position": {"x": 100, "y": 100}
-      },
-      {
-        "id": "context_extraction",
-        "name": "上下文特征提取模块",
-        "type": "python_module",
-        "description": "提取并统计网络攻击检测相关的上下文特征",
-        "module_config": {
-          "function_name": "execute_context_feature_extraction",
-          "file_path": "modules/context_feature_extraction.py",
-          "input_schema": {
-            "type": "string",
-            "description": "报文输入模块的输出JSON数据"
-          },
-          "output_schema": {
-            "type": "object",
-            "properties": {
-              "ip_features": {"type": "object"},
-              "url_features": {"type": "object"},
-              "time_features": {"type": "object"},
-              "anomaly_features": {"type": "object"},
-              "risk_indicators": {"type": "object"}
-            }
-          }
-        },
-        "position": {"x": 300, "y": 100}
-      },
-      {
-        "id": "rule_engine",
-        "name": "规则引擎与扫描函数模块",
-        "type": "python_module",
-        "description": "基于专家规则进行攻击检测和风险评估",
-        "module_config": {
-          "function_name": "execute_rule_engine_scan",
-          "file_path": "modules/rule_engine_scanner.py",
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "packet_data": {"type": "string"},
-              "context_features": {"type": "string"}
+        
+        {
+          "id": "message_processing_loop",
+          "name": "报文处理循环体B",
+          "type": "loop_module",
+          "description": "循环处理每个报文，维护辅助决策变量",
+          "loop_config": {
+            "max_iterations": 1000,
+            "loop_variables": [
+              "messages_infos",
+              "user_input", 
+              "all_detect_results"
+            ],
+            "iteration_variable": "current_message",
+            "iteration_source": "{{start_node.user_input}}",
+            "termination_condition": "all_messages_processed",
+            "initial_loop_variables": {
+              "messages_infos": "{}",
+              "all_detect_results": "[]"
             }
           },
-          "output_schema": {
-            "type": "object",
-            "properties": {
-              "is_attack": {"type": "boolean"},
-              "attack_types": {"type": "array"},
-              "risk_level": {"type": "string"},
-              "confidence_score": {"type": "number"},
-              "requires_llm_analysis": {"type": "boolean"}
-            }
-          }
-        },
-        "position": {"x": 500, "y": 100}
-      },
-      {
-        "id": "risk_decision",
-        "name": "风险决策节点",
-        "type": "switch_case",
-        "description": "根据规则引擎结果决定后续流程",
-        "switch_config": {
-          "condition_field": "risk_level",
-          "cases": [
-            {
-              "condition": "严重",
-              "next_node": "llm_analysis"
-            },
-            {
-              "condition": "高风险",
-              "next_node": "llm_analysis"
-            },
-            {
-              "condition": "中风险",
-              "next_node": "suspicious_check"
-            },
-            {
-              "condition": "低风险",
-              "next_node": "safe_pass"
-            }
-          ],
-          "default_case": "safe_pass"
-        },
-        "position": {"x": 700, "y": 100}
-      },
-      {
-        "id": "suspicious_check",
-        "name": "可疑特征检查",
-        "type": "switch_case",
-        "description": "检查是否有可疑特征需要LLM分析",
-        "switch_config": {
-          "condition_field": "requires_llm_analysis",
-          "cases": [
-            {
-              "condition": true,
-              "next_node": "llm_analysis"
-            },
-            {
-              "condition": false,
-              "next_node": "safe_pass"
-            }
-          ],
-          "default_case": "safe_pass"
-        },
-        "position": {"x": 700, "y": 250}
-      },
-      {
-        "id": "llm_prompt_generator",
-        "name": "LLM提示词生成器",
-        "type": "python_module",
-        "description": "为LLM分析生成专业的提示词",
-        "module_config": {
-          "function_name": "generate_llm_prompt",
-          "file_path": "prompts/llm_analysis_prompts.py",
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "packet_data": {"type": "string"},
-              "context_features": {"type": "string"},
-              "rule_engine_result": {"type": "string"},
-              "analysis_type": {"type": "string", "default": "security_analysis"}
-            }
-          }
-        },
-        "position": {"x": 900, "y": 100}
-      },
-      {
-        "id": "llm_analysis",
-        "name": "LLM深度研判模块",
-        "type": "llm_module",
-        "description": "使用大语言模型进行深度安全分析",
-        "llm_config": {
-          "model": "gpt-4",
-          "temperature": 0.1,
-          "max_tokens": 2000,
-          "system_prompt": "你是一位资深的网络安全专家，专门负责深度分析网络攻击和威胁。请基于提供的数据进行专业、准确的安全分析。",
-          "input_from_node": "llm_prompt_generator",
-          "output_format": "structured_json"
-        },
-        "position": {"x": 1100, "y": 100}
-      },
-      {
-        "id": "response_generator",
-        "name": "响应生成器",
-        "type": "python_module",
-        "description": "生成最终的检测报告和防护建议",
-        "module_config": {
-          "function_name": "generate_security_response",
-          "file_path": "modules/response_generator.py"
-        },
-        "position": {"x": 1300, "y": 100}
-      },
-      {
-        "id": "safe_pass",
-        "name": "安全放行",
-        "type": "output_node",
-        "description": "请求安全，正常放行",
-        "output_config": {
-          "status": "safe",
-          "action": "allow",
-          "message": "请求安全，正常放行"
-        },
-        "position": {"x": 900, "y": 400}
-      },
-      {
-        "id": "alert_block",
-        "name": "告警阻断",
-        "type": "output_node", 
-        "description": "生成告警并考虑阻断",
-        "output_config": {
-          "status": "threat_detected",
-          "action": "alert_or_block"
-        },
-        "position": {"x": 1500, "y": 100}
-      }
-    ],
-    "edges": [
-      {
-        "from": "packet_input",
-        "to": "context_extraction",
-        "data_mapping": {
-          "input": "{{packet_input.output}}"
+          
+          "sub_workflow": {
+            "nodes": [
+              {
+                "id": "loop_start",
+                "name": "循环开始",
+                "type": "loop_start",
+                "description": "循环体开始节点",
+                "inputs": {
+                  "current_message": "{{loop.current_iteration}}",
+                  "messages_infos": "{{loop.messages_infos}}",
+                  "all_detect_results": "{{loop.all_detect_results}}"
+                }
+              },
+              
+              {
+                "id": "message_extractor",
+                "name": "单个报文提取模块BA",
+                "type": "python_execution",
+                "description": "从user_input中提取单个报文",
+                "function": "main",
+                "code": "def main(user_input, current_index):\n    import json\n    import re\n    \n    try:\n        # 解析当前索引\n        index = int(current_index) if current_index.isdigit() else 0\n        \n        # 将输入文本按行分割，每行作为一个报文\n        messages = [line.strip() for line in user_input.split('\\n') if line.strip()]\n        \n        if index < len(messages):\n            message = messages[index]\n            return {\n                'output': json.dumps({\n                    'message': message,\n                    'index': index,\n                    'total_count': len(messages)\n                })\n            }\n        else:\n            return {\n                'output': json.dumps({\n                    'message': '',\n                    'index': index,\n                    'total_count': len(messages),\n                    'completed': True\n                })\n            }\n    except Exception as e:\n        return {\n            'output': json.dumps({\n                'error': True,\n                'message': str(e)\n            })\n        }",
+                "inputs": {
+                  "user_input": "{{loop_start.user_input}}",
+                  "current_index": "{{loop.current_index}}"
+                }
+              },
+              
+              {
+                "id": "context_extractor",
+                "name": "辅助决策信息提取模块BB",
+                "type": "python_execution",
+                "description": "提取和更新辅助决策信息",
+                "function": "main",
+                "code": "def main(message, messages_infos):\n    import json\n    import re\n    from datetime import datetime\n    \n    try:\n        # 解析输入\n        message_data = json.loads(message)\n        current_message = message_data.get('message', '')\n        \n        if not current_message:\n            return {'output': json.dumps(messages_infos)}\n        \n        # 解析现有辅助决策信息\n        try:\n            context = json.loads(messages_infos) if messages_infos else {}\n        except:\n            context = {}\n        \n        # 提取报文特征\n        message_features = {\n            'length': len(current_message),\n            'has_sql_keywords': bool(re.search(r'(union|select|insert|update|delete|drop|create|alter)', current_message.lower())),\n            'has_script_tags': bool(re.search(r'<script|javascript:|on\\w+\\s*=', current_message.lower())),\n            'has_command_injection': bool(re.search(r'[;&|`$]', current_message)),\n            'has_path_traversal': bool(re.search(r'\\.\\./', current_message)),\n            'special_chars_count': len(re.findall(r'[<>\"'\\\\&]', current_message)),\n            'timestamp': datetime.now().isoformat()\n        }\n        \n        # 更新统计信息\n        if 'statistics' not in context:\n            context['statistics'] = {\n                'total_messages': 0,\n                'attack_patterns': {},\n                'message_lengths': [],\n                'processing_history': []\n            }\n        \n        context['statistics']['total_messages'] += 1\n        context['statistics']['message_lengths'].append(message_features['length'])\n        context['statistics']['processing_history'].append({\n            'index': message_data.get('index', 0),\n            'features': message_features,\n            'timestamp': message_features['timestamp']\n        })\n        \n        # 更新攻击模式统计\n        if message_features['has_sql_keywords']:\n            context['statistics']['attack_patterns']['sql_injection'] = context['statistics']['attack_patterns'].get('sql_injection', 0) + 1\n        if message_features['has_script_tags']:\n            context['statistics']['attack_patterns']['xss'] = context['statistics']['attack_patterns'].get('xss', 0) + 1\n        if message_features['has_command_injection']:\n            context['statistics']['attack_patterns']['command_injection'] = context['statistics']['attack_patterns'].get('command_injection', 0) + 1\n        if message_features['has_path_traversal']:\n            context['statistics']['attack_patterns']['path_traversal'] = context['statistics']['attack_patterns'].get('path_traversal', 0) + 1\n        \n        # 计算上下文关联信息\n        recent_messages = context['statistics']['processing_history'][-5:]  # 最近5条\n        if len(recent_messages) > 1:\n            context['context_analysis'] = {\n                'recent_attack_rate': sum(1 for msg in recent_messages if any(msg['features'].get(f'has_{pattern}', False) for pattern in ['sql_keywords', 'script_tags', 'command_injection', 'path_traversal'])) / len(recent_messages),\n                'average_message_length': sum(msg['features']['length'] for msg in recent_messages) / len(recent_messages),\n                'pattern_consistency': len(set(msg['features'].get('has_sql_keywords', False) for msg in recent_messages)) == 1\n            }\n        \n        # 保留最近50条历史记录\n        if len(context['statistics']['processing_history']) > 50:\n            context['statistics']['processing_history'] = context['statistics']['processing_history'][-50:]\n        if len(context['statistics']['message_lengths']) > 100:\n            context['statistics']['message_lengths'] = context['statistics']['message_lengths'][-100:]\n        \n        return {\n            'output': json.dumps(context)\n        }\n    except Exception as e:\n        return {\n            'output': json.dumps({\n                'error': True,\n                'message': str(e)\n            })\n        }",
+                "inputs": {
+                  "message": "{{message_extractor.output}}",
+                  "messages_infos": "{{loop_start.messages_infos}}"
+                }
+              },
+              
+              {
+                "id": "context_updater",
+                "name": "循环变量更新模块BC",
+                "type": "loop_variable_update",
+                "description": "更新辅助决策信息",
+                "update_variable": "messages_infos",
+                "update_source": "{{context_extractor.output}}"
+              },
+              
+              {
+                "id": "decision_engine",
+                "name": "决策引擎BD",
+                "type": "python_execution",
+                "description": "基于报文和辅助决策信息进行攻击检测",
+                "function": "main",
+                "code": "def main(message, messages_infos):\n    import json\n    import re\n    \n    try:\n        # 解析输入\n        message_data = json.loads(message)\n        current_message = message_data.get('message', '')\n        \n        if not current_message:\n            return {\n                'output': json.dumps({\n                    'attack_flag': False,\n                    'attack_type': 'none',\n                    'risk_score': 0,\n                    'risk_assessment': 'No message to analyze'\n                })\n            }\n        \n        # 解析辅助决策信息\n        try:\n            context = json.loads(messages_infos)\n        except:\n            context = {}\n        \n        # 攻击检测规则\n        attack_patterns = {\n            'sql_injection': [\n                r'union\\s+select',\n                r'select\\s+.*\\s+from',\n                r'insert\\s+into',\n                r'delete\\s+from',\n                r'drop\\s+table',\n                r'\\'\\s*or\\s*\\'',\n                r'\\'\\s*and\\s*\\'',\n                r'--\\s*$',\n                r'/\\*.*\\*/'\n            ],\n            'xss': [\n                r'<script[^>]*>',\n                r'javascript:',\n                r'on\\w+\\s*=',\n                r'<iframe[^>]*>',\n                r'<object[^>]*>',\n                r'<embed[^>]*>'\n            ],\n            'command_injection': [\n                r'[;&|`$]',\n                r'\\|\\|',\n                r'&&',\n                r'\\$\\(',\n                r'`[^`]*`'\n            ],\n            'path_traversal': [\n                r'\\.\\./',\n                r'\\.\\.\\\\',\n                r'%2e%2e%2f',\n                r'%2e%2e%5c'\n            ]\n        }\n        \n        # 检测攻击类型\n        detected_attacks = []\n        for attack_type, patterns in attack_patterns.items():\n            for pattern in patterns:\n                if re.search(pattern, current_message, re.IGNORECASE):\n                    detected_attacks.append(attack_type)\n                    break\n        \n        # 计算风险评分\n        risk_score = 0\n        risk_factors = []\n        \n        # 基于攻击模式评分\n        if detected_attacks:\n            risk_score += 30 * len(set(detected_attacks))  # 每种攻击类型+30分\n            risk_factors.append(f'Detected attacks: {detected_attacks}')\n        \n        # 基于报文长度评分\n        message_length = len(current_message)\n        if message_length > 1000:\n            risk_score += 20\n            risk_factors.append('Very long message')\n        elif message_length > 500:\n            risk_score += 10\n            risk_factors.append('Long message')\n        \n        # 基于特殊字符评分\n        special_chars = len(re.findall(r'[<>\"'\\\\&]', current_message))\n        if special_chars > 10:\n            risk_score += 15\n            risk_factors.append('High special character count')\n        elif special_chars > 5:\n            risk_score += 8\n            risk_factors.append('Moderate special character count')\n        \n        # 基于上下文信息评分\n        if 'context_analysis' in context:\n            recent_attack_rate = context['context_analysis'].get('recent_attack_rate', 0)\n            if recent_attack_rate > 0.5:\n                risk_score += 25\n                risk_factors.append('High recent attack rate')\n            elif recent_attack_rate > 0.2:\n                risk_score += 10\n                risk_factors.append('Moderate recent attack rate')\n        \n        # 限制风险评分在0-100之间\n        risk_score = min(max(risk_score, 0), 100)\n        \n        # 确定攻击类型\n        if detected_attacks:\n            attack_type = detected_attacks[0] if len(detected_attacks) == 1 else 'multiple'\n            attack_flag = True\n        else:\n            attack_type = 'none'\n            attack_flag = False\n        \n        # 生成风险评估\n        if risk_score >= 80:\n            risk_level = 'critical'\n        elif risk_score >= 60:\n            risk_level = 'high'\n        elif risk_score >= 40:\n            risk_level = 'medium'\n        else:\n            risk_level = 'low'\n        \n        risk_assessment = f'Risk level: {risk_level}, Score: {risk_score}. Factors: {risk_factors}'\n        \n        return {\n            'output': json.dumps({\n                'attack_flag': attack_flag,\n                'attack_type': attack_type,\n                'risk_score': risk_score,\n                'risk_assessment': risk_assessment,\n                'detected_attacks': detected_attacks,\n                'risk_factors': risk_factors\n            })\n        }\n    except Exception as e:\n        return {\n            'output': json.dumps({\n                'error': True,\n                'message': str(e)\n            })\n        }",
+                "inputs": {
+                  "message": "{{message_extractor.output}}",
+                  "messages_infos": "{{context_updater.output}}"
+                }
+              },
+              
+              {
+                "id": "risk_switch",
+                "name": "风险评分判断BE",
+                "type": "switch_case",
+                "description": "根据risk_score判断是否需要LLM分析",
+                "input": "{{decision_engine.output}}",
+                "condition_field": "risk_score",
+                "cases": [\n                  {\n                    "condition": "<= 50",\n                    "next_node": "direct_response_generator"\n                  },\n                  {\n                    "condition": "> 50",\n                    "next_node": "llm_analysis"\n                  }\n                ],\n                "default_case": "direct_response_generator"\n              },\n              \n              {\n                "id": "direct_response_generator",\n                "name": "响应生成器BF",\n                "type": "python_execution",\n                "description": "直接生成当前决策的研判",\n                "function": "main",\n                "code": "def main(decision_result):\n    import json\n    from datetime import datetime\n    \n    try:\n        decision_data = json.loads(decision_result)\n        \n        # 生成响应结果\n        detect_result = {\n            'message_index': 0,  # 将由循环变量更新模块设置\n            'timestamp': datetime.now().isoformat(),\n            'attack_flag': decision_data.get('attack_flag', False),\n            'attack_type': decision_data.get('attack_type', 'none'),\n            'risk_score': decision_data.get('risk_score', 0),\n            'risk_assessment': decision_data.get('risk_assessment', ''),\n            'detection_method': 'rule_engine',\n            'confidence': 0.8 if decision_data.get('risk_score', 0) > 50 else 0.6,\n            'recommendations': []\n        }\n        \n        # 添加建议\n        if decision_data.get('attack_flag'):\n            detect_result['recommendations'].append('立即阻断此请求')\n            detect_result['recommendations'].append('记录攻击日志')\n        elif decision_data.get('risk_score', 0) > 30:\n            detect_result['recommendations'].append('继续监控此IP')\n        else:\n            detect_result['recommendations'].append('正常处理')\n        \n        return {\n            'output': json.dumps(detect_result)\n        }\n    except Exception as e:\n        return {\n            'output': json.dumps({\n                'error': True,\n                'message': str(e)\n            })\n        }",
+                "inputs": {
+                  "decision_result": "{{decision_engine.output}}"\n                },\n                "condition": "{{risk_switch.output}} == 'direct_response_generator'"\n              },\n              \n              {\n                "id": "llm_analyzer",\n                "name": "LLM攻击分析模块BG",\n                "type": "python_execution",\n                "description": "准备LLM分析提示词",\n                "function": "main",\n                "code": "def main(message, messages_infos, decision_result):\n    import json\n    \n    try:\n        message_data = json.loads(message)\n        decision_data = json.loads(decision_result)\n        \n        current_message = message_data.get('message', '')\n        \n        # 生成LLM分析提示词\n        prompt = f\"\"\"\n你是一位资深的网络安全专家，请对以下网络请求进行深度安全分析：\n\n请求内容：{current_message}\n\n当前检测结果：\n- 攻击标志：{decision_data.get('attack_flag', False)}\n- 攻击类型：{decision_data.get('attack_type', 'none')}\n- 风险评分：{decision_data.get('risk_score', 0)}\n- 风险评估：{decision_data.get('risk_assessment', '')}\n\n上下文信息：\n{messages_infos}\n\n请重新评估并提供以下信息（JSON格式）：\n{{\n  \"attack_flag\": true/false,\n  \"attack_type\": \"具体攻击类型\",\n  \"risk_score\": 0-100的评分,\n  \"risk_assessment\": \"详细的风险评估说明\",\n  \"confidence\": 0.0-1.0的置信度,\n  \"analysis_reasoning\": \"分析推理过程\",\n  \"recommendations\": [\"建议1\", \"建议2\"]\n}}\"\"\"\n        \n        return {\n            'output': json.dumps({\n                'prompt': prompt,\n                'message_data': message_data,\n                'decision_data': decision_data\n            })\n        }\n    except Exception as e:\n        return {\n            'output': json.dumps({\n                'error': True,\n                'message': str(e)\n            })\n        }",
+                "inputs": {
+                  "message": "{{message_extractor.output}}",
+                  "messages_infos": "{{context_updater.output}}",
+                  "decision_result": "{{decision_engine.output}}"
+                },
+                "condition": "{{risk_switch.output}} == 'llm_analysis'"
+              },\n              \n              {\n                "id": "llm_analysis",\n                "name": "LLM深度分析",\n                "type": "llm_module",\n                "description": "使用大语言模型进行深度威胁分析",\n                "llm_config": {\n                  "model": "gpt-4",\n                  "temperature": 0.1,\n                  "max_tokens": 1500,\n                  "system_prompt": "你是一位资深的网络安全专家，专门负责深度分析网络攻击和威胁。请基于提供的数据进行专业、准确的安全分析，并以JSON格式返回结果。"\n                },\n                "input": "{{llm_analyzer.output.prompt}}",\n                "condition": "{{risk_switch.output}} == 'llm_analysis'"
+              },\n              \n              {\n                "id": "llm_response_generator",\n                "name": "LLM响应生成器",\n                "type": "python_execution",\n                "description": "处理LLM分析结果并生成最终响应",\n                "function": "main",\n                "code": "def main(llm_result, original_decision):\n    import json\n    from datetime import datetime\n    \n    try:\n        # 解析LLM结果\n        llm_data = json.loads(llm_result)\n        decision_data = json.loads(original_decision)\n        \n        # 生成最终检测结果\n        detect_result = {\n            'message_index': 0,  # 将由循环变量更新模块设置\n            'timestamp': datetime.now().isoformat(),\n            'attack_flag': llm_data.get('attack_flag', decision_data.get('attack_flag', False)),\n            'attack_type': llm_data.get('attack_type', decision_data.get('attack_type', 'none')),\n            'risk_score': llm_data.get('risk_score', decision_data.get('risk_score', 0)),\n            'risk_assessment': llm_data.get('risk_assessment', decision_data.get('risk_assessment', '')),\n            'detection_method': 'llm_enhanced',\n            'confidence': llm_data.get('confidence', 0.9),\n            'analysis_reasoning': llm_data.get('analysis_reasoning', ''),\n            'recommendations': llm_data.get('recommendations', [])\n        }\n        \n        return {\n            'output': json.dumps(detect_result)\n        }\n    except Exception as e:\n        # 如果LLM解析失败，使用原始决策结果\n        try:\n            decision_data = json.loads(original_decision)\n            detect_result = {\n                'message_index': 0,\n                'timestamp': datetime.now().isoformat(),\n                'attack_flag': decision_data.get('attack_flag', False),\n                'attack_type': decision_data.get('attack_type', 'none'),\n                'risk_score': decision_data.get('risk_score', 0),\n                'risk_assessment': decision_data.get('risk_assessment', ''),\n                'detection_method': 'rule_engine_fallback',\n                'confidence': 0.7,\n                'analysis_reasoning': 'LLM analysis failed, using rule engine result',\n                'recommendations': ['继续监控']\n            }\n            return {\n                'output': json.dumps(detect_result)\n            }\n        except:\n            return {\n                'output': json.dumps({\n                    'error': True,\n                    'message': str(e)\n                })\n            }",
+                "inputs": {
+                  "llm_result": "{{llm_analysis.output}}",
+                  "original_decision": "{{decision_engine.output}}"
+                },
+                "condition": "{{risk_switch.output}} == 'llm_analysis'"
+              },\n              \n              {\n                "id": "result_updater",\n                "name": "全量结果更新模块BH",\n                "type": "python_execution",\n                "description": "将研判结果更新至返回变量",\n                "function": "main",\n                "code": "def main(all_detect_results, detect_result, message_index):\n    import json\n    \n    try:\n        # 解析现有结果列表\n        try:\n            results_list = json.loads(all_detect_results) if all_detect_results else []\n        except:\n            results_list = []\n        \n        # 解析新的检测结果\n        result_data = json.loads(detect_result)\n        result_data['message_index'] = int(message_index)\n        \n        # 添加到结果列表\n        results_list.append(result_data)\n        \n        return {\n            'output': json.dumps(results_list)\n        }\n    except Exception as e:\n        return {\n            'output': json.dumps({\n                'error': True,\n                'message': str(e)\n            })\n        }",
+                "inputs": {
+                  "all_detect_results": "{{loop_start.all_detect_results}}",
+                  "detect_result": "{{direct_response_generator.output || llm_response_generator.output}}",
+                  "message_index": "{{message_extractor.output.index}}"
+                }
+              },\n              \n              {\n                "id": "loop_variable_update",\n                "name": "循环变量更新模块BI",\n                "type": "loop_variable_update",\n                "description": "更新all_detect_results",\n                "update_variable": "all_detect_results",\n                "update_source": "{{result_updater.output}}"
+              }
+            ],\n            \n            "edges": [\n              {"from": "loop_start", "to": "message_extractor"},\n              {"from": "message_extractor", "to": "context_extractor"},\n              {"from": "context_extractor", "to": "context_updater"},\n              {"from": "context_updater", "to": "decision_engine"},\n              {"from": "decision_engine", "to": "risk_switch"},\n              {"from": "risk_switch", "to": "direct_response_generator", "condition": "risk_score <= 50"},\n              {"from": "risk_switch", "to": "llm_analyzer", "condition": "risk_score > 50"},\n              {"from": "llm_analyzer", "to": "llm_analysis"},\n              {"from": "llm_analysis", "to": "llm_response_generator"},\n              {"from": "direct_response_generator", "to": "result_updater"},\n              {"from": "llm_response_generator", "to": "result_updater"},\n              {"from": "result_updater", "to": "loop_variable_update"}\n            ]
+          },
+          \n          "position": {"x": 300, "y": 100}
+        },\n        \n        {\n          "id": "final_output",\n          "name": "输出全部响应结果",\n          "type": "output_node",\n          "description": "输出所有检测结果",\n          "output_variable": "all_detect_results",\n          "position": {"x": 500, "y": 100}
         }
-      },
-      {
-        "from": "context_extraction",
-        "to": "rule_engine",
-        "data_mapping": {
-          "packet_data": "{{packet_input.output}}",
-          "context_features": "{{context_extraction.output}}"
-        }
-      },
-      {
-        "from": "rule_engine",
-        "to": "risk_decision",
-        "data_mapping": {
-          "input": "{{rule_engine.output}}"
-        }
-      },
-      {
-        "from": "risk_decision",
-        "to": "suspicious_check",
-        "condition": "risk_level == '中风险'"
-      },
-      {
-        "from": "risk_decision",
-        "to": "llm_prompt_generator",
-        "condition": "risk_level in ['严重', '高风险']"
-      },
-      {
-        "from": "risk_decision",
-        "to": "safe_pass",
-        "condition": "risk_level == '低风险'"
-      },
-      {
-        "from": "suspicious_check",
-        "to": "llm_prompt_generator",
-        "condition": "requires_llm_analysis == true"
-      },
-      {
-        "from": "suspicious_check",
-        "to": "safe_pass",
-        "condition": "requires_llm_analysis == false"
-      },
-      {
-        "from": "llm_prompt_generator",
-        "to": "llm_analysis",
-        "data_mapping": {
-          "prompt": "{{llm_prompt_generator.output}}",
-          "packet_data": "{{packet_input.output}}",
-          "context_data": "{{context_extraction.output}}",
-          "rule_result": "{{rule_engine.output}}"
-        }
-      },
-      {
-        "from": "llm_analysis",
-        "to": "response_generator",
-        "data_mapping": {
-          "llm_analysis": "{{llm_analysis.output}}",
-          "packet_data": "{{packet_input.output}}",
-          "context_data": "{{context_extraction.output}}",
-          "rule_result": "{{rule_engine.output}}"
-        }
-      },
-      {
-        "from": "response_generator",
-        "to": "alert_block"
-      }
-    ]
-  },
-  "execution_settings": {
-    "timeout_seconds": 30,
-    "retry_count": 2,
-    "parallel_execution": false,
-    "error_handling": "continue_on_error",
-    "logging_level": "INFO"
-  },
-  "monitoring": {
-    "metrics": [
-      "processing_time",
-      "attack_detection_rate",
-      "false_positive_rate",
-      "throughput_requests_per_second"
-    ],
-    "alerts": [
-      {
-        "condition": "processing_time > 10s",
-        "action": "send_alert"
-      },
-      {
-        "condition": "error_rate > 5%",
-        "action": "send_alert"
-      }
-    ]
-  }
-}
+      ],\n      \n      "edges": [\n        {"from": "start_node", "to": "message_processing_loop"},\n        {"from": "message_processing_loop", "to": "final_output"}\n      ]
+    },
+    \n    "output_schema": {\n      "type": "array",\n      "description": "所有检测结果的列表",\n      "items": {\n        "type": "object",\n        "properties": {\n          "message_index": {"type": "number"},\n          "timestamp": {"type": "string"},\n          "attack_flag": {"type": "boolean"},\n          "attack_type": {"type": "string"},\n          "risk_score": {"type": "number"},\n          "risk_assessment": {"type": "string"},\n          "detection_method": {"type": "string"},\n          "confidence": {"type": "number"},\n          "recommendations": {"type": "array"}\n        }\n      }\n    }
+  },\n  \n  "execution_settings": {\n    "timeout_seconds": 300,\n    "retry_count": 2,\n    "error_handling": "continue_on_error",\n    "logging_level": "INFO",\n    "loop_settings": {\n      "max_loop_time": 600,\n      "batch_processing": false,\n      "context_persistence": true\n    }\n  },\n  \n  "monitoring": {\n    "metrics": [\n      "total_processing_time",\n      "messages_processed",\n      "attack_detection_rate",\n      "llm_analysis_rate"\n    ],\n    "alerts": [\n      {\n        "condition": "attack_detection_rate > 20%",\n        "action": "high_priority_alert"\n      },\n      {\n        "condition": "processing_time > 300s",\n        "action": "performance_alert"\n      }\n    ]\n  }\n}
