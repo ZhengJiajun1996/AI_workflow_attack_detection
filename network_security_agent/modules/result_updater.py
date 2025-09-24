@@ -7,7 +7,6 @@
 
 def main(all_detect_results, detect_result, iteration_index):
     import json
-    from datetime import datetime
     
     try:
         # 解析现有结果列表
@@ -24,12 +23,12 @@ def main(all_detect_results, detect_result, iteration_index):
         
         # 确保时间戳存在
         if 'timestamp' not in result_data:
-            result_data['timestamp'] = datetime.now().isoformat()
+            result_data['timestamp'] = ""
         
         # 添加处理元数据
         result_data['processing_metadata'] = {
-            'processed_at': datetime.now().isoformat(),
-            'result_id': f"RES_{int(datetime.now().timestamp())}_{result_data['iteration_index']}",
+            'processed_at': "",
+            'result_id': f"RES_SEQ_{len(results_list) + 1}_{result_data['iteration_index']}",
             'sequence_number': len(results_list) + 1
         }
         

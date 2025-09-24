@@ -7,7 +7,6 @@
 
 def main(decision_result, llm_result=None, original_decision=None):
     import json
-    from datetime import datetime
     
     try:
         # 解析输入
@@ -20,7 +19,7 @@ def main(decision_result, llm_result=None, original_decision=None):
                 # 使用LLM分析结果
                 detect_result = {
                     'iteration_index': 0,  # 将由循环变量更新模块设置
-                    'timestamp': datetime.now().isoformat(),
+                    'timestamp': "",
                     'attack_flag': llm_data.get('attack_flag', decision_data.get('attack_flag', False)),
                     'attack_type': llm_data.get('attack_type', decision_data.get('attack_type', 'none')),
                     'risk_score': llm_data.get('risk_score', decision_data.get('risk_score', 0)),
@@ -62,7 +61,6 @@ def main(decision_result, llm_result=None, original_decision=None):
 
 def _generate_rule_engine_response(decision_data):
     """生成基于规则引擎的响应"""
-    from datetime import datetime
     
     risk_score = decision_data.get('risk_score', 0)
     attack_flag = decision_data.get('attack_flag', False)
@@ -101,7 +99,7 @@ def _generate_fallback_response(decision_data, error_type):
     
     detect_result = {
         'iteration_index': 0,
-        'timestamp': datetime.now().isoformat(),
+        'timestamp': "",
         'attack_flag': decision_data.get('attack_flag', False),
         'attack_type': decision_data.get('attack_type', 'none'),
         'risk_score': decision_data.get('risk_score', 0),

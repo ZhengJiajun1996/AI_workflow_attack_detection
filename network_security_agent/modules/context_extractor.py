@@ -8,7 +8,6 @@
 def main(message_data, messages_infos):
     import json
     import re
-    from datetime import datetime
     
     try:
         # 解析输入
@@ -37,7 +36,7 @@ def main(message_data, messages_infos):
             'has_injection_patterns': bool(re.search(r'[\'\"][\s]*or[\s]*[\'\"]|[\'\"][\s]*and[\s]*[\'\"]|--|\/\*|\*\/', current_message.lower())),
             'has_encoding_attempts': bool(re.search(r'%[0-9a-fA-F]{2}|\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}', current_message)),
             'special_chars_count': len(re.findall(r'[<>"&\\\\]', current_message)),
-            'timestamp': datetime.now().isoformat()
+            'timestamp': None
         }
         
         # 更新统计信息
@@ -85,7 +84,7 @@ def main(message_data, messages_infos):
                 'average_message_length': sum(msg['features']['length'] for msg in recent_messages) / len(recent_messages),
                 'pattern_consistency': len(set(msg['features'].get('has_sql_keywords', False) for msg in recent_messages)) == 1,
                 'time_based_analysis': {
-                    'messages_per_minute': len([m for m in recent_messages if (datetime.now() - datetime.fromisoformat(m['timestamp'].replace('Z', '+00:00'))).seconds < 60]),
+                    'messages_per_minute': 0,
                     'suspicious_patterns': [p for p, count in context['statistics']['attack_patterns'].items() if count > 0]
                 }
             }
