@@ -99,53 +99,53 @@ def main(message_data, messages_infos):
             type_multiplier = 1.5 if len(set(detected_attacks)) > 1 else 1.0
             confidence_bonus = sum(details['confidence'] for details in attack_details.values()) * 10
             
-            risk_score += base_score + (len(set(detected_attacks)) * 25 * type_multiplier) + confidence_bonus
+            risk_score = risk_score + base_score + (len(set(detected_attacks)) * 25 * type_multiplier) + confidence_bonus
             risk_factors.append(f'Detected attacks: {detected_attacks}')
         
         # 基于报文长度评分
         message_length = len(current_message)
         if message_length > 2000:
-            risk_score += 25
+            risk_score = risk_score + 25
             risk_factors.append('Very long message')
         elif message_length > 1000:
-            risk_score += 15
+            risk_score = risk_score + 15
             risk_factors.append('Long message')
         elif message_length > 500:
-            risk_score += 8
+            risk_score = risk_score + 8
             risk_factors.append('Moderate message length')
         
         # 基于特殊字符评分
         special_chars = len(re.findall(r'[<>"&\\\\]', current_message))
         if special_chars > 20:
-            risk_score += 20
+            risk_score = risk_score + 20
             risk_factors.append('Very high special character count')
         elif special_chars > 10:
-            risk_score += 12
+            risk_score = risk_score + 12
             risk_factors.append('High special character count')
         elif special_chars > 5:
-            risk_score += 6
+            risk_score = risk_score + 6
             risk_factors.append('Moderate special character count')
         
         # 基于编码尝试评分
         encoding_patterns = len(re.findall(r'%[0-9a-fA-F]{2}', current_message))
         if encoding_patterns > 5:
-            risk_score += 15
+            risk_score = risk_score + 15
             risk_factors.append('Multiple encoding attempts')
         elif encoding_patterns > 2:
-            risk_score += 8
+            risk_score = risk_score + 8
             risk_factors.append('Encoding attempts detected')
         
         # 基于上下文信息评分
         if 'context_analysis' in context:
             recent_attack_rate = context['context_analysis'].get('recent_attack_rate', 0)
             if recent_attack_rate > 0.7:
-                risk_score += 30
+                risk_score = risk_score + 30
                 risk_factors.append('Very high recent attack rate')
             elif recent_attack_rate > 0.5:
-                risk_score += 20
+                risk_score = risk_score + 20
                 risk_factors.append('High recent attack rate')
             elif recent_attack_rate > 0.3:
-                risk_score += 10
+                risk_score = risk_score + 10
                 risk_factors.append('Moderate recent attack rate')
         
         # 限制风险评分在0-100之间
