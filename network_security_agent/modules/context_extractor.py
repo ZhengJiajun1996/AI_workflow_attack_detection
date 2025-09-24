@@ -123,18 +123,11 @@ def main(message_data, messages_infos):
                         break
                     t = t + 1
 
-            # 可疑模式（显式检查已知键，避免 dict 迭代）
+            # 可疑模式（遍历 attack_patterns 字典进行收集）
             suspicious_patterns = []
-            if context['statistics']['attack_patterns'].get('sql_injection', 0) > 0:
-                suspicious_patterns.append('sql_injection')
-            if context['statistics']['attack_patterns'].get('xss', 0) > 0:
-                suspicious_patterns.append('xss')
-            if context['statistics']['attack_patterns'].get('command_injection', 0) > 0:
-                suspicious_patterns.append('command_injection')
-            if context['statistics']['attack_patterns'].get('path_traversal', 0) > 0:
-                suspicious_patterns.append('path_traversal')
-            if context['statistics']['attack_patterns'].get('encoding_attempts', 0) > 0:
-                suspicious_patterns.append('encoding_attempts')
+            for pattern_name, count in context['statistics']['attack_patterns'].items():
+                if count and count > 0:
+                    suspicious_patterns.append(pattern_name)
 
             context['context_analysis'] = {
                 'recent_attack_rate': (float(recent_attacks) / float(len(recent_messages))) if len(recent_messages) > 0 else 0.0,
