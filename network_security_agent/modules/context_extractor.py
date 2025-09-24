@@ -84,7 +84,7 @@ def main(message_data, messages_infos):
             idx = start_idx
             while idx < ph_len:
                 recent_messages.append(ph[idx])
-                idx += 1
+                idx = idx + 1
         if len(recent_messages) > 1:
             # 统计最近攻击数
             recent_attacks = 0
@@ -99,17 +99,17 @@ def main(message_data, messages_infos):
                     if msg.get('features', {}).get(key, False):
                         has_attack = True
                         break
-                    j += 1
+                    j = j + 1
                 if has_attack:
-                    recent_attacks += 1
-                i += 1
+                    recent_attacks = recent_attacks + 1
+                i = i + 1
 
             # 平均消息长度
             total_len = 0
             k = 0
             while k < len(recent_messages):
-                total_len += recent_messages[k].get('features', {}).get('length', 0)
-                k += 1
+                total_len = total_len + recent_messages[k].get('features', {}).get('length', 0)
+                k = k + 1
             average_length = (float(total_len) / float(len(recent_messages))) if len(recent_messages) > 0 else 0.0
 
             # has_sql_keywords 一致性
@@ -121,7 +121,7 @@ def main(message_data, messages_infos):
                     if bool(recent_messages[t].get('features', {}).get('has_sql_keywords', False)) != first_val:
                         all_same = False
                         break
-                    t += 1
+                    t = t + 1
 
             # 可疑模式（显式检查已知键，避免 dict 迭代）
             suspicious_patterns = []
