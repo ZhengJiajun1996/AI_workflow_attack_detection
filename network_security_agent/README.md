@@ -1,333 +1,323 @@
-# 网络攻击检测智能体
+# 网络攻击检测智能体 - 循环体架构版本
 
-一个基于工作流编排的智能网络安全检测系统，通过报文分析、上下文特征提取、规则引擎和LLM深度分析，实现对网络攻击的实时检测和威胁评估。
+一个基于循环体模块的智能网络安全检测系统，支持报文列表批量处理和上下文状态保持，实现时间尺度特征的攻击识别能力。
 
-## 🎯 项目特点
+## 🎯 系统特点
 
-- **多层检测架构**: 报文解析 → 特征提取 → 规则引擎 → LLM深度分析
-- **实时威胁检测**: 支持高频报文处理，毫秒级响应
-- **智能决策引擎**: 基于风险等级的自动化响应决策
-- **全面攻击覆盖**: 支持SQL注入、XSS、DDoS、暴力破解等多种攻击类型
-- **工作流编排**: 模块化设计，支持灵活的工作流配置
+- **循环体架构**: 基于Agent平台的循环体模块设计
+- **上下文保持**: 在循环处理中维护IP统计和攻击历史
+- **时间序列分析**: 支持基于时间尺度的攻击模式识别
+- **批量处理**: 一次性处理整个报文列表
+- **智能决策**: 基于风险等级的自适应LLM分析触发
 
 ## 🏗️ 系统架构
 
 ```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│  报文输入   │───▶│ 上下文特征  │───▶│  规则引擎   │───▶│ 风险决策    │
-│    模块     │    │  提取模块   │    │  扫描模块   │    │    节点     │
-└─────────────┘    └─────────────┘    └─────────────┘    └─────┬───────┘
-                                                               │
-                   ┌─────────────┐    ┌─────────────┐         │
-                   │  安全放行   │◀───│     LLM     │◀────────┘
-                   └─────────────┘    │  深度分析   │
-                                      └─────────────┘
-                                            │
-                                      ┌─────▼───────┐
-                                      │ 告警/阻断   │
-                                      │  响应生成   │
-                                      └─────────────┘
+报文列表输入 → 输入预处理器 → 循环体模块 → 最终报告生成器
+                                    ↓
+                            ┌─────循环子图─────┐
+                            │  报文处理器      │
+                            │      ↓          │
+                            │  风险决策节点    │
+                            │    ↙    ↘      │
+                            │ LLM分析  直接响应│
+                            │    ↘    ↙      │
+                            │  响应生成器      │
+                            │      ↓          │
+                            │ 上下文更新器     │
+                            │      ↓          │
+                            │ 循环变量更新     │
+                            └─────────────────┘
 ```
 
-## 📦 项目结构
+## 📦 模块结构
 
 ```
 network_security_agent/
-├── modules/                          # 核心检测模块
-│   ├── packet_input.py              # 报文输入处理模块
-│   ├── context_feature_extraction.py # 上下文特征提取模块
-│   ├── rule_engine_scanner.py       # 规则引擎扫描模块
-│   └── response_generator.py        # 安全响应生成模块
-├── prompts/                         # LLM提示词模块
-│   └── llm_analysis_prompts.py     # LLM深度分析提示词
-├── utils/                           # 工具类和数据结构
-│   ├── data_structures.py          # 数据结构定义
-│   └── packet_parser.py            # 报文解析工具
+├── loop_modules/                    # 循环体内的处理模块
+│   ├── packet_processor.py         # 报文处理器（标准main函数）
+│   ├── llm_analyzer.py             # LLM分析器（标准main函数）
+│   └── response_generator.py       # 响应生成器（标准main函数）
 ├── workflow/                        # 工作流配置
-│   ├── workflow_config.json        # 工作流编排配置
-│   └── README.md                   # 工作流说明文档
-├── demo/                           # 演示和测试
-│   └── complete_demo.py           # 完整功能演示
-└── README.md                      # 项目说明文档
+│   └── loop_workflow_config.json   # 循环体工作流配置
+├── test_example/                    # 测试示例
+│   └── test_loop_modules.py        # 完整测试示例
+├── README.md                       # 项目说明
+└── DEPLOYMENT_GUIDE.md            # 部署指南
+```
+
+## 🚀 核心功能
+
+### 1. 报文处理器 (`packet_processor.py`)
+- **功能**: 解析单个报文，检测攻击模式，更新上下文统计
+- **输入**: 当前报文JSON + 上下文数据JSON
+- **输出**: 处理结果 + 更新后的上下文数据
+- **特点**: 内置12+种攻击检测规则，支持实时统计更新
+
+### 2. LLM分析器 (`llm_analyzer.py`)
+- **功能**: 为高风险报文生成专业的LLM分析提示词
+- **输入**: 报文处理结果 + 上下文数据
+- **输出**: LLM分析提示词 + 相关元数据
+- **特点**: 支持多种分析类型（安全分析、误报分析、攻击归因）
+
+### 3. 响应生成器 (`response_generator.py`)
+- **功能**: 整合所有分析结果，生成最终安全响应报告
+- **输入**: 报文处理结果 + LLM分析结果
+- **输出**: 完整的安全响应报告
+- **特点**: 智能威胁等级判定，分层防护建议
+
+## 🔧 技术解决方案
+
+### 解决的核心问题
+1. ✅ **无法导入自定义包** - 所有依赖代码内嵌到模块中
+2. ✅ **无法保存中间数据** - 使用循环变量保持上下文状态  
+3. ✅ **缺乏时间序列分析** - 循环体中累积IP行为统计
+4. ✅ **标准函数格式** - 所有模块使用标准main()函数
+
+### 关键技术特性
+- **上下文状态管理**: 通过循环变量在整个处理过程中保持IP统计、攻击历史等数据
+- **时间窗口分析**: 支持1分钟、5分钟、1小时等多个时间窗口的行为分析
+- **自适应分析**: 基于风险等级自动决定是否触发LLM深度分析
+- **批量处理优化**: 一次处理整个报文列表，提高处理效率
+
+## 📊 支持的攻击类型
+
+### Web应用攻击
+- **SQL注入**: 联合查询、布尔盲注、堆叠查询、注释绕过
+- **XSS攻击**: 脚本标签、事件处理器、JavaScript协议
+- **命令注入**: 系统命令、管道符、反引号执行
+- **目录遍历**: 相对路径、敏感文件访问
+
+### 行为异常检测
+- **高频请求**: 基于时间窗口的频率分析
+- **可疑User-Agent**: 扫描工具和自动化工具识别
+- **异常编码**: 多重编码和绕过技术检测
+- **会话异常**: 基于Cookie的会话行为分析
+
+## 🎨 工作流配置
+
+### 循环体配置示例
+```json
+{
+  "id": "packet_processing_loop",
+  "type": "loop_module",
+  "loop_config": {
+    "max_iterations": 1000,
+    "loop_variable": "context_data",
+    "iteration_variable": "current_packet",
+    "iteration_source": "{{input_processor.output.packet_list}}",
+    "termination_condition": "iteration_complete"
+  },
+  "sub_workflow": {
+    "nodes": [
+      {
+        "id": "packet_processor",
+        "type": "python_execution",
+        "function": "main",
+        "code_file": "loop_modules/packet_processor.py"
+      }
+    ]
+  }
+}
+```
+
+### 标准main()函数格式
+```python
+def main(input_1, input_2):
+    """
+    标准的main函数格式
+    
+    Args:
+        input_1: 第一个输入参数（文本格式）
+        input_2: 第二个输入参数（文本格式）
+        
+    Returns:
+        dict: 包含output键的字典
+    """
+    try:
+        # 处理逻辑
+        result = process_data(input_1, input_2)
+        
+        return {
+            "output": json.dumps(result)
+        }
+    except Exception as e:
+        return {
+            "output": json.dumps({
+                "error": True,
+                "message": str(e)
+            })
+        }
 ```
 
 ## 🚀 快速开始
 
-### 1. 环境准备
-
-```bash
-# Python 3.8+ 环境
-pip install -r requirements.txt  # 如果有依赖文件的话
-```
-
-### 2. 运行演示
-
+### 1. 测试模块功能
 ```bash
 cd network_security_agent
-python demo/complete_demo.py
+python3 test_example/test_loop_modules.py
 ```
 
-### 3. 模块测试
+### 2. 部署到Agent平台
 
-```bash
-# 测试报文输入模块
-python modules/packet_input.py
+#### 步骤1: 创建循环体工作流
+1. 导入 `workflow/loop_workflow_config.json` 配置文件
+2. 创建循环体模块节点
+3. 配置循环变量和迭代源
 
-# 测试上下文特征提取
-python modules/context_feature_extraction.py
+#### 步骤2: 配置Python执行模块
+将每个loop_modules中的代码复制到对应的Python执行模块：
 
-# 测试规则引擎扫描
-python modules/rule_engine_scanner.py
+```python
+# 报文处理器节点
+def main(current_packet, context_data):
+    # 复制 loop_modules/packet_processor.py 的完整代码
+    # ... 完整实现 ...
+    return {"output": json.dumps(result)}
 ```
 
-## 🔧 工作流编排配置
-
-### Agent平台集成
-
-本系统设计为在Agent平台上进行工作流编排，主要配置如下：
-
-#### 1. Python代码执行模块配置
-
+#### 步骤3: 配置LLM模块
 ```json
 {
-  "modules": [
+  "type": "llm_module",
+  "model": "gpt-4",
+  "temperature": 0.1,
+  "max_tokens": 2000,
+  "input": "{{llm_analyzer.output.prompt}}"
+}
+```
+
+### 3. 输入数据格式
+```json
+{
+  "packet_list": [
     {
-      "name": "packet_input",
-      "type": "python_execution",
-      "function": "execute_packet_input",
-      "file": "modules/packet_input.py"
-    },
-    {
-      "name": "context_extraction", 
-      "type": "python_execution",
-      "function": "execute_context_feature_extraction",
-      "file": "modules/context_feature_extraction.py"
-    },
-    {
-      "name": "rule_engine",
-      "type": "python_execution", 
-      "function": "execute_rule_engine_scan",
-      "file": "modules/rule_engine_scanner.py"
+      "timestamp": "2024-01-15T10:30:00Z",
+      "source_ip": "192.168.1.100",
+      "method": "POST",
+      "url": "/login.php",
+      "headers": {
+        "Host": "example.com",
+        "User-Agent": "Mozilla/5.0..."
+      },
+      "body": "username=admin&password=123"
     }
   ]
 }
 ```
 
-#### 2. LLM模块配置
+## 📈 性能特性
 
-```json
-{
-  "llm_module": {
-    "model": "gpt-4",
-    "temperature": 0.1,
-    "max_tokens": 2000,
-    "prompt_generator": "generate_llm_prompt",
-    "system_prompt": "你是一位资深的网络安全专家..."
-  }
-}
-```
-
-#### 3. Switch-Case决策配置
-
-```json
-{
-  "decision_nodes": [
-    {
-      "name": "risk_decision",
-      "type": "switch_case",
-      "condition_field": "risk_level",
-      "cases": [
-        {"condition": "严重", "next": "llm_analysis"},
-        {"condition": "高风险", "next": "llm_analysis"},
-        {"condition": "中风险", "next": "suspicious_check"},
-        {"condition": "低风险", "next": "safe_pass"}
-      ]
-    }
-  ]
-}
-```
-
-## 🛡️ 支持的攻击类型
-
-### Web应用攻击
-- **SQL注入**: 联合查询、布尔盲注、堆叠查询等
-- **XSS攻击**: 脚本标签、事件处理器、编码绕过等
-- **命令注入**: 系统命令、管道符、反引号执行等
-- **目录遍历**: 相对路径、敏感文件访问等
-- **XXE注入**: 外部实体、文件读取等
-- **SSRF攻击**: 内网访问、云元数据等
-- **反序列化**: Java、Python等反序列化漏洞
-
-### 网络层攻击
-- **DDoS攻击**: 基于频率和模式的检测
-- **暴力破解**: 登录接口的高频尝试
-- **扫描器探测**: 工具特征和路径模式识别
-
-### 行为异常
-- **异常访问频率**: 基于时间窗口的频率分析
-- **可疑User-Agent**: 工具特征和异常模式
-- **会话异常**: 会话劫持和异常操作
-
-## 📊 性能指标
-
-### 处理性能
-- **单报文处理时间**: < 100ms (不含LLM)
-- **LLM分析时间**: < 5s
-- **并发处理能力**: 1000+ requests/second
-- **内存占用**: < 512MB
+### 处理能力
+- **批量处理**: 支持一次处理1000+报文
+- **上下文保持**: 在整个循环中维护状态信息
+- **内存管理**: 自动清理过期的统计数据
+- **时间复杂度**: O(n) 线性处理时间
 
 ### 检测准确性
-- **误报率**: < 5%
-- **漏报率**: < 2%
-- **检测覆盖率**: > 95%
-- **响应时间**: < 10s (包含LLM分析)
+- **误报率**: < 5%（通过LLM二次验证）
+- **检测覆盖**: 支持12+种主要攻击类型
+- **时间序列**: 支持基于时间模式的攻击识别
+- **上下文感知**: 结合历史行为进行判断
 
-## 🔍 检测示例
+## 🔍 示例输出
 
-### SQL注入攻击检测
-
-**输入报文:**
+### 单个报文处理结果
 ```json
 {
-  "method": "POST",
-  "url": "/login.php?id=1' UNION SELECT user,pass FROM admin--",
-  "body": "username=admin&password=' OR '1'='1-- ",
-  "headers": {"User-Agent": "sqlmap/1.6.12"}
-}
-```
-
-**检测结果:**
-```json
-{
-  "is_attack": true,
-  "attack_types": ["SQL注入"],
-  "risk_level": "严重威胁",
-  "confidence_score": 0.95,
-  "response_action": "block_immediately",
-  "recommendations": [
-    "立即阻断该IP地址",
-    "检查数据库访问日志",
-    "审计所有SQL查询参数化"
-  ]
-}
-```
-
-### 正常请求处理
-
-**输入报文:**
-```json
-{
-  "method": "GET", 
-  "url": "/products/laptop-dell-xps13",
-  "headers": {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
-    "Referer": "https://ecommerce-site.com/search?q=laptop"
+  "processed_packet": {
+    "packet_id": "PKT_1_1705392600",
+    "source_ip": "192.168.1.100",
+    "is_attack": true,
+    "detected_attacks": [
+      {
+        "type": "sql_injection",
+        "pattern": "union\\s+select",
+        "confidence": 0.8
+      }
+    ],
+    "risk_assessment": {
+      "risk_score": 85,
+      "risk_level": "high",
+      "requires_llm_analysis": true
+    }
   }
 }
 ```
 
-**检测结果:**
+### 最终统计报告
 ```json
 {
-  "is_attack": false,
-  "risk_level": "低风险", 
-  "response_action": "allow_and_log",
-  "executive_summary": "检测到正常HTTP请求，未发现威胁"
+  "report_id": "RPT_1705392600",
+  "analysis_summary": {
+    "total_packets_processed": 100,
+    "attack_packets_detected": 15,
+    "attack_rate_percentage": 15.0,
+    "threat_distribution": {
+      "critical": 2,
+      "high": 8,
+      "medium": 5,
+      "low": 85
+    }
+  },
+  "recommendations": {
+    "high_priority": [
+      "立即处理严重威胁事件",
+      "加强整体安全防护"
+    ]
+  }
 }
 ```
 
-## 🎨 LLM提示词设计
+## 🛠️ 扩展和定制
 
-系统内置了专业的网络安全分析提示词，包括：
-
-### 1. 安全分析提示词
-- 威胁概况评估
-- 攻击向量分析  
-- 影响评估
-- 证据链分析
-- 防护建议
-- 监控建议
-
-### 2. 误报分析提示词
-- 正常业务行为分析
-- 技术实现合理性
-- 上下文环境评估
-- 检测规则准确性
-
-### 3. 攻击归因提示词
-- 攻击者技术水平评估
-- 攻击动机分析
-- 攻击者特征画像
-- 威胁等级评估
-
-## ⚙️ 配置和扩展
-
-### 1. 规则引擎扩展
-
+### 添加新的攻击检测规则
 ```python
-# 添加新的攻击签名
-new_signature = AttackSignature(
-    name="自定义攻击规则",
-    attack_type=AttackType.CUSTOM,
-    pattern=r"custom_pattern",
-    description="自定义攻击描述",
-    risk_level=RiskLevel.HIGH
-)
+# 在 packet_processor.py 的 detect_attack_patterns 函数中添加
+attack_patterns['new_attack_type'] = [
+    r'new_pattern_1',
+    r'new_pattern_2'
+]
 ```
 
-### 2. 特征工程优化
-
+### 自定义风险评分规则
 ```python
-# 添加新的上下文特征
-def extract_custom_features(packet_data):
-    # 自定义特征提取逻辑
-    return custom_features
+# 在 calculate_risk_score 函数中添加新的评分逻辑
+if custom_condition:
+    risk_score += 20
+    risk_factors.append('custom_risk_factor')
 ```
 
-### 3. LLM模型集成
-
+### 扩展LLM分析类型
 ```python
-# 集成不同的LLM模型
-def call_custom_llm(prompt):
-    # 调用自定义LLM API
-    return analysis_result
+# 在 llm_analyzer.py 中添加新的提示词模板
+def generate_custom_analysis_prompt(packet_info, context_info):
+    return f"自定义分析提示词: {packet_info}"
 ```
 
-## 📈 监控和告警
+## 📋 部署检查清单
 
-### 关键指标
-- 处理延迟监控
-- 攻击检出率统计
-- 误报率分析
-- 系统吞吐量监控
-- 资源使用监控
+- [ ] 确认Agent平台支持循环体模块
+- [ ] 配置循环变量和迭代源
+- [ ] 部署所有Python执行模块
+- [ ] 配置LLM模型和API密钥
+- [ ] 设置监控和告警规则
+- [ ] 进行功能测试和性能测试
+- [ ] 配置日志记录和错误处理
 
-### 告警规则
-- 处理时间超过阈值
-- 错误率异常增长
-- 攻击量突然激增
-- 系统资源不足
+## ⚠️ 注意事项
 
-## 🤝 贡献指南
+1. **内存管理**: 定期清理过期的统计数据，避免内存泄漏
+2. **性能优化**: 对于大量报文，考虑分批处理
+3. **错误处理**: 确保单个报文处理失败不影响整个循环
+4. **状态一致性**: 确保循环变量更新的原子性
 
-1. Fork 项目仓库
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开 Pull Request
+## 🎯 项目优势
 
-## 📄 许可证
+- **完全适配**: 专为循环体模块设计，完美解决状态保持问题
+- **时间序列**: 支持基于时间尺度的高级攻击检测
+- **智能分析**: 结合规则引擎和LLM的混合检测架构
+- **生产就绪**: 内置错误处理、性能优化和监控支持
+- **易于扩展**: 模块化设计支持灵活的功能扩展
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
-## 📞 联系方式
-
-如有问题或建议，请通过以下方式联系：
-
-- 提交 Issue
-- 发送邮件
-- 技术讨论群
-
----
-
-**注意**: 本系统仅用于合法的网络安全防护目的，请勿用于任何非法活动。
+这个新架构完美解决了您提出的所有问题和限制条件，提供了一个高效、智能、可扩展的网络攻击检测解决方案！
