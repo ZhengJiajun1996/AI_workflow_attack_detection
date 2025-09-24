@@ -94,15 +94,15 @@ def _generate_statistics(results_list):
     for result in results_list:
         risk_score = result.get('risk_score', 0)
         if risk_score <= 20:
-            risk_score_distribution['0-20'] += 1
+            risk_score_distribution['0-20'] = risk_score_distribution.get('0-20', 0) + 1
         elif risk_score <= 40:
-            risk_score_distribution['21-40'] += 1
+            risk_score_distribution['21-40'] = risk_score_distribution.get('21-40', 0) + 1
         elif risk_score <= 60:
-            risk_score_distribution['41-60'] += 1
+            risk_score_distribution['41-60'] = risk_score_distribution.get('41-60', 0) + 1
         elif risk_score <= 80:
-            risk_score_distribution['61-80'] += 1
+            risk_score_distribution['61-80'] = risk_score_distribution.get('61-80', 0) + 1
         else:
-            risk_score_distribution['81-100'] += 1
+            risk_score_distribution['81-100'] = risk_score_distribution.get('81-100', 0) + 1
     
     # 攻击类型统计
     attack_types_summary = {}

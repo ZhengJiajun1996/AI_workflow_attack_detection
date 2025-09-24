@@ -52,7 +52,9 @@ def main(message_data, messages_infos):
                 'time_analysis': {}
             }
         
-        context['statistics']['total_messages'] += 1
+        # 平台限制：不允许对对象项使用增强赋值(+=)。改为显式读取-计算-写入
+        current_total = context['statistics'].get('total_messages', 0)
+        context['statistics']['total_messages'] = current_total + 1
         context['statistics']['message_lengths'].append(message_features['length'])
         context['statistics']['processing_history'].append({
             'iteration_index': message_info.get('iteration_index', 0),
